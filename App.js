@@ -1,4 +1,4 @@
-//builds a grid of children stories updated in the last 30 days, sorted by parent
+//child stories updated in the last 30 days
 Ext.define('CustomApp', {
     extend: 'Rally.app.App',
     componentCls: 'app',
@@ -10,7 +10,7 @@ Ext.define('CustomApp', {
         var startDateUTC = startDate.toISOString();
         Ext.create('Rally.data.WsapiDataStore', {
             model: 'UserStory',
-            fetch: ['FormattedID','Name','Parent', 'HasParent','LastUpdateDate', 'ObjectID', 'Project'],
+            fetch: ['FormattedID','Name','Parent', 'HasParent','LastUpdateDate'],
 	    limit: Infinity,
             autoLoad: true,
             filters: [
@@ -37,7 +37,8 @@ Ext.define('CustomApp', {
                 Name: story.get('Name'),
                 _ref: story.get("_ref"),
                 //Parent: (this._parent && this._parent.FormattedID) || 'None',
-                Parent: parent.FormattedID                
+                Parent: parent,
+		LastUpdateDate: story.get('LastUpdateDate')
             };
             stories.push(s);
             }
@@ -50,12 +51,6 @@ Ext.define('CustomApp', {
             xtype: 'rallygrid',
             store: Ext.create('Rally.data.custom.Store', {
                 data: stories,
-                sorters: [
-			{
-			property: 'Parent',
-			direction: 'DESC'     //ASC sorts out 'None' on top
-			}
-		    ],
             }),
             columnCfgs: [
                 {
@@ -66,17 +61,13 @@ Ext.define('CustomApp', {
                     text: 'Name', dataIndex: 'Name', editor: 'textfield', flex: 1,
                 },
                 {
-                    text: 'Parent', dataIndex: 'Parent', xtype: 'templatecolumn',
-                        tpl: Ext.create('Rally.ui.renderer.template.FormattedIDTemplate')
+                    text: 'Parent', dataIndex: 'Parent',
+			renderer: function(parent){
+			   return '<a href="' + Rally.nav.Manager.getDetailUrl(parent) + '">' + parent.FormattedID + '</a>'
+			}
+                        
                 }
-            ],
-            selType: 'cellmodel',
-            plugins: [
-                Ext.create('Ext.grid.plugin.CellEditing', {
-                clicksToEdit: 1
-                })
-            ],
-	    width: 600   
+            ]  
         });
     }
 });
