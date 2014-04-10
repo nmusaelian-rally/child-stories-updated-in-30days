@@ -7,12 +7,77 @@
 
     <script type="text/javascript">
         Rally.onReady(function () {
-                Ext.define('CustomApp', {
+                //child stories updated in the last 30 days
+Ext.define('CustomApp', {
     extend: 'Rally.app.App',
     componentCls: 'app',
     items:{ html:'<a href="https://help.rallydev.com/apps/2.0rc2/doc/">App SDK 2.0rc2 Docs</a>'},
     launch: function() {
-        //Write app code here
+        var millisecondsInDay = 86400000;
+        var currentDate = new Date();
+        var startDate = new Date(currentDate - millisecondsInDay*30); //in the last 30 days
+        var startDateUTC = startDate.toISOString();
+        Ext.create('Rally.data.WsapiDataStore', {
+            model: 'UserStory',
+            fetch: ['FormattedID','Name','Parent', 'HasParent','LastUpdateDate'],
+	    limit: Infinity,
+            autoLoad: true,
+            filters: [
+			{
+			    property: 'LastUpdateDate',
+			    operator: '>',
+			    value: startDateUTC
+			}
+            ],
+            listeners: {
+                load: this._onDataLoaded,
+                scope: this
+            }
+        }); 
+    },
+    _onDataLoaded: function(store, data){
+        var stories = [];
+        _.each(data, function(story) {
+            if (story.get('HasParent')) {
+                var parent = story.get('Parent');
+                
+                var s  = {
+                FormattedID: story.get('FormattedID'),
+                Name: story.get('Name'),
+                _ref: story.get("_ref"),
+                //Parent: (this._parent && this._parent.FormattedID) || 'None',
+                Parent: parent,
+		LastUpdateDate: story.get('LastUpdateDate')
+            };
+            stories.push(s);
+            }
+        },
+        this);
+        this._createGrid(stories);
+    },
+    _createGrid: function(stories) {
+        this.add({
+            xtype: 'rallygrid',
+            store: Ext.create('Rally.data.custom.Store', {
+                data: stories,
+            }),
+            columnCfgs: [
+                {
+                   text: 'Formatted ID', dataIndex: 'FormattedID', xtype: 'templatecolumn',
+                    tpl: Ext.create('Rally.ui.renderer.template.FormattedIDTemplate')
+                },
+                {
+                    text: 'Name', dataIndex: 'Name', editor: 'textfield', flex: 1,
+                },
+                {
+                    text: 'Parent', dataIndex: 'Parent',
+			renderer: function(parent){
+			   return '<a href="' + Rally.nav.Manager.getDetailUrl(parent) + '">' + parent.FormattedID + '</a>'
+			}
+                        
+                }
+            ]  
+        });
     }
 });
 
