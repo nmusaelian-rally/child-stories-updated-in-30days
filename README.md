@@ -3,6 +3,7 @@ child stories updated in the last 30 days
 
 ## Overview
 ![](pic.png)
+
 This app comes AS IS. It is not supported by Rally support.
 ## License
 
