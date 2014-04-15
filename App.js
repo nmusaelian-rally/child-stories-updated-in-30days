@@ -18,6 +18,11 @@ Ext.define('CustomApp', {
 			    property: 'LastUpdateDate',
 			    operator: '>',
 			    value: startDateUTC
+			},
+			{
+			    property: 'Parent',
+			    operator: '!=',
+			    value: null
 			}
             ],
             listeners: {
@@ -29,19 +34,14 @@ Ext.define('CustomApp', {
     _onDataLoaded: function(store, data){
         var stories = [];
         _.each(data, function(story) {
-            if (story.get('HasParent')) {
-                var parent = story.get('Parent');
-                
                 var s  = {
                 FormattedID: story.get('FormattedID'),
                 Name: story.get('Name'),
                 _ref: story.get("_ref"),
-                //Parent: (this._parent && this._parent.FormattedID) || 'None',
-                Parent: parent,
+                Parent: story.get('Parent'),
 		LastUpdateDate: story.get('LastUpdateDate')
             };
             stories.push(s);
-            }
         },
         this);
         this._createGrid(stories);
