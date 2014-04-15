@@ -8,54 +8,40 @@ Ext.define('CustomApp', {
         var currentDate = new Date();
         var startDate = new Date(currentDate - millisecondsInDay*30); //in the last 30 days
         var startDateUTC = startDate.toISOString();
-        Ext.create('Rally.data.WsapiDataStore', {
-            model: 'UserStory',
-            fetch: ['FormattedID','Name','Parent', 'HasParent','LastUpdateDate'],
-	    limit: Infinity,
-            autoLoad: true,
-            filters: [
-			{
-			    property: 'LastUpdateDate',
-			    operator: '>',
-			    value: startDateUTC
-			},
-			{
-			    property: 'Parent',
-			    operator: '!=',
-			    value: null
-			}
-            ],
-            listeners: {
-                load: this._onDataLoaded,
-                scope: this
-            }
-        }); 
+	
+	
+	var filters =  [
+	    {
+		property: 'LastUpdateDate',
+		operator: '>',
+		value: startDateUTC
+	    },
+	    {
+		property: 'Parent',
+		operator: '!=',
+		value: null
+	    }
+        ]
+	
+	var storeConfig =
+	{
+	    model: 'UserStory',
+	    pageSize: 200,
+	    remoteSort: false,
+	    fetch: ['FormattedID','Name','Parent', 'HasParent','LastUpdateDate'],
+	    filters: filters
+	}
+	
+        this._makeGrid(storeConfig);
     },
-    _onDataLoaded: function(store, data){
-        var stories = [];
-        _.each(data, function(story) {
-                var s  = {
-                FormattedID: story.get('FormattedID'),
-                Name: story.get('Name'),
-                _ref: story.get("_ref"),
-                Parent: story.get('Parent'),
-		LastUpdateDate: story.get('LastUpdateDate')
-            };
-            stories.push(s);
-        },
-        this);
-        this._createGrid(stories);
-    },
-    _createGrid: function(stories) {
-        this.add({
-            xtype: 'rallygrid',
-            store: Ext.create('Rally.data.custom.Store', {
-                data: stories,
-            }),
-            columnCfgs: [
-                {
-                   text: 'Formatted ID', dataIndex: 'FormattedID', xtype: 'templatecolumn',
-                    tpl: Ext.create('Rally.ui.renderer.template.FormattedIDTemplate')
+    
+    _makeGrid: function(storeConfig){
+	var _grid = Ext.create('Rally.ui.grid.Grid',{
+	    storeConfig: storeConfig,
+	    columnCfgs:[
+		{
+		    text: 'Formatted ID', dataIndex: 'FormattedID', xtype: 'templatecolumn',
+			tpl: Ext.create('Rally.ui.renderer.template.FormattedIDTemplate')
                 },
                 {
                     text: 'Name', dataIndex: 'Name', editor: 'textfield', flex: 1,
@@ -67,7 +53,8 @@ Ext.define('CustomApp', {
 			}
                         
                 }
-            ]  
-        });
+	    ]
+	});
+	this.add(_grid);
     }
 });
